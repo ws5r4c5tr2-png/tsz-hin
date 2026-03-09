@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>狀態指數儀</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             padding: 0;
@@ -12,35 +16,57 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f0f0f0;
+            width: 100vw;
+            background-color: #ffffff; /* 改為白色讓邊緣更融合 */
             overflow: hidden;
-            touch-action: none; /* 防止縮放與滾動干擾操作 */
-        }
-
-        /* 當手機處於直向 (Portrait) 時，強制旋轉容器 */
-        @media (orientation: portrait) {
-            .container {
-                transform: rotate(90deg);
-                /* 旋轉後，原本的螢幕高度 (vh) 變成了內容的寬度基準 */
-                width: 92vh !important; 
-            }
+            touch-action: none;
         }
 
         .container {
             position: relative;
-            width: 92vw;
-            max-width: 800px;
+            /* 預設寬度填滿 */
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             transition: transform 0.3s ease;
         }
 
-        .background-img {
-            width: 100%;
-            display: block;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        /* 當手機直向時，強制旋轉並讓寬度填滿整個螢幕高度 */
+        @media (orientation: portrait) {
+            .container {
+                transform: rotate(90deg);
+                width: 100vh; 
+                height: 100vw;
+            }
+            .background-img {
+                width: 100vh !important; /* 強制寬度填滿長邊 */
+                height: auto;
+            }
         }
 
-        /* 旋轉指標容器：對準圖中銀色扣子 */
+        /* 當手機橫向時 */
+        @media (orientation: landscape) {
+            .container {
+                width: 100vw;
+                height: 100vh;
+            }
+            .background-img {
+                height: 100vh; /* 強制高度填滿短邊 */
+                width: auto;
+            }
+        }
+
+        .background-img {
+            display: block;
+            max-width: none;
+            max-height: none;
+            /* 移除陰影與圓角以獲得純淨全螢幕感 */
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        /* 旋轉指標容器 */
         .needle-container {
             position: absolute;
             bottom: 6.5%; 
@@ -55,7 +81,8 @@
             bottom: 0;
             left: -20px; 
             width: 40px;
-            height: 140px; 
+            height: 35vh; /* 根據螢幕高度動態調整指標長度 */
+            max-height: 200px;
             transform-origin: bottom center;
             transform: rotate(-90deg);
             cursor: pointer;
@@ -99,7 +126,6 @@
         function updateRotation(e) {
             const needleRect = document.querySelector('.needle-container').getBoundingClientRect();
             
-            // 取得指標圓心的絕對中心點
             const centerX = needleRect.left + (needleRect.width / 2);
             const centerY = needleRect.top + (needleRect.height / 2);
 
@@ -111,13 +137,11 @@
 
             let angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
 
-            // 核心修正：如果螢幕是直向的（內容旋轉了 90 度），計算的角度也要扣除 90 度
             const isPortrait = window.innerHeight > window.innerWidth;
             if (isPortrait) {
                 angle -= 90;
             }
             
-            // 限制箭頭只能在上方 180 度範圍活動
             if (angle > 0 && angle < 180) {
                 angle = (angle > 90) ? -180 : 0;
             }
@@ -125,7 +149,6 @@
             needle.style.transform = `rotate(${angle + 90}deg)`;
         }
 
-        // 統一滑鼠與觸控事件
         const start = (e) => { isDragging = true; updateRotation(e); };
         const end = () => { isDragging = false; };
         const move = (e) => { 
