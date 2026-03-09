@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>狀態指數儀</title>
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -17,58 +15,64 @@
             align-items: center;
             height: 100vh;
             width: 100vw;
-            background-color: #ffffff; /* 改為白色讓邊緣更融合 */
+            background-color: #ffffff;
             overflow: hidden;
             touch-action: none;
         }
 
+        /* 核心容器：確保它始終保持在視窗中心 */
         .container {
             position: relative;
-            /* 預設寬度填滿 */
-            width: 100vw;
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: transform 0.3s ease;
+            width: 100%;
+            height: 100%;
         }
 
-        /* 當手機直向時，強制旋轉並讓寬度填滿整個螢幕高度 */
+        /* 手機直向時的旋轉與縮放修正 */
         @media (orientation: portrait) {
-            .container {
+            .content-wrapper {
                 transform: rotate(90deg);
-                width: 100vh; 
+                /* 限制寬度為螢幕高度，確保圖片不超出 */
+                width: 100vh;
                 height: 100vw;
+                display: flex;
+                justify-content: center;
+                align-items: center;
             }
             .background-img {
-                width: 100vh !important; /* 強制寬度填滿長邊 */
+                width: 95vh !important; /* 留一點點邊界，避免貼死 */
                 height: auto;
             }
         }
 
-        /* 當手機橫向時 */
+        /* 手機橫向時 */
         @media (orientation: landscape) {
-            .container {
+            .content-wrapper {
                 width: 100vw;
                 height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
             }
             .background-img {
-                height: 100vh; /* 強制高度填滿短邊 */
+                height: 95vh !important;
                 width: auto;
             }
         }
 
         .background-img {
             display: block;
-            max-width: none;
-            max-height: none;
-            /* 移除陰影與圓角以獲得純淨全螢幕感 */
-            border-radius: 0;
-            box-shadow: none;
+            object-fit: contain; /* 最重要：確保圖片完整顯示不被切掉 */
+            max-width: 100%;
+            max-height: 100%;
         }
 
-        /* 旋轉指標容器 */
+        /* 指標容器：現在跟隨圖片的比例定位 */
         .needle-container {
             position: absolute;
+            /* 根據原圖比例，圓心大約在圖片底部向上一點 */
             bottom: 6.5%; 
             left: 47.5%; 
             width: 0;
@@ -79,10 +83,10 @@
         #needle {
             position: absolute;
             bottom: 0;
-            left: -20px; 
-            width: 40px;
-            height: 35vh; /* 根據螢幕高度動態調整指標長度 */
-            max-height: 200px;
+            left: -15px; 
+            width: 30px;
+            /* 將長度改回固定比例，避免過長 */
+            height: 140px; 
             transform-origin: bottom center;
             transform: rotate(-90deg);
             cursor: pointer;
@@ -105,29 +109,32 @@
 <body>
 
     <div class="container">
-        <img src="https://i.imgur.com/SJ5ZpYj.jpeg" alt="Background" class="background-img">
-        <div class="needle-container">
-            <svg id="needle" viewBox="0 0 40 140">
-                <path d="M20,0 L0,35 L12,35 L12,140 L28,140 L28,35 L40,35 Z" 
-                      fill="#FFD700" 
-                      stroke="#000000" 
-                      stroke-width="2" 
-                      stroke-linejoin="round"/>
-            </svg>
-            <div class="pivot"></div>
+        <div class="content-wrapper">
+            <img src="https://i.imgur.com/SJ5ZpYj.jpeg" alt="Background" class="background-img">
+            <div class="needle-container">
+                <svg id="needle" viewBox="0 0 40 140">
+                    <path d="M20,0 L0,35 L12,35 L12,140 L28,140 L28,35 L40,35 Z" 
+                          fill="#FFD700" 
+                          stroke="#000000" 
+                          stroke-width="2" 
+                          stroke-linejoin="round"/>
+                </svg>
+                <div class="pivot"></div>
+            </div>
         </div>
     </div>
 
     <script>
         const needle = document.getElementById('needle');
-        const container = document.querySelector('.container');
+        const contentWrapper = document.querySelector('.content-wrapper');
         let isDragging = false;
 
         function updateRotation(e) {
-            const needleRect = document.querySelector('.needle-container').getBoundingClientRect();
+            // 使用 needle-container 的位置作為圓心，這在旋轉後依然準確
+            const needleContainer = document.querySelector('.needle-container').getBoundingClientRect();
             
-            const centerX = needleRect.left + (needleRect.width / 2);
-            const centerY = needleRect.top + (needleRect.height / 2);
+            const centerX = needleContainer.left + (needleContainer.width / 2);
+            const centerY = needleContainer.top + (needleContainer.height / 2);
 
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -139,9 +146,11 @@
 
             const isPortrait = window.innerHeight > window.innerWidth;
             if (isPortrait) {
+                // 當 content-wrapper 旋轉了 90 度，輸入座標也需偏移
                 angle -= 90;
             }
             
+            // 限制移動範圍
             if (angle > 0 && angle < 180) {
                 angle = (angle > 90) ? -180 : 0;
             }
