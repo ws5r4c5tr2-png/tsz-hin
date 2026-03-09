@@ -2,7 +2,7 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>狀態指數儀</title>
     <style>
         body {
@@ -13,25 +13,34 @@
             align-items: center;
             height: 100vh;
             background-color: #f0f0f0;
-            font-family: sans-serif;
             overflow: hidden;
-            touch-action: none;
+            touch-action: none; /* 防止縮放與滾動干擾操作 */
+        }
+
+        /* 當手機處於直向 (Portrait) 時，強制旋轉容器 */
+        @media (orientation: portrait) {
+            .container {
+                transform: rotate(90deg);
+                /* 旋轉後，原本的螢幕高度 (vh) 變成了內容的寬度基準 */
+                width: 92vh !important; 
+            }
         }
 
         .container {
             position: relative;
-            width: 95vw;
-            max-width: 600px;
+            width: 92vw;
+            max-width: 800px;
+            transition: transform 0.3s ease;
         }
 
         .background-img {
             width: 100%;
             display: block;
-            border-radius: 5px;
+            border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
-        /* 指標容器位置：對準銀色金屬扣 */
+        /* 旋轉指標容器：對準圖中銀色扣子 */
         .needle-container {
             position: absolute;
             bottom: 6.5%; 
@@ -41,7 +50,6 @@
             z-index: 10;
         }
 
-        /* SVG 箭頭：帶有黑色邊框 */
         #needle {
             position: absolute;
             bottom: 0;
@@ -50,12 +58,10 @@
             height: 140px; 
             transform-origin: bottom center;
             transform: rotate(-90deg);
-            transition: transform 0.05s ease-out;
             cursor: pointer;
             filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.3));
         }
 
-        /* 底部圓點 */
         .pivot {
             position: absolute;
             bottom: -8px;
@@ -73,7 +79,6 @@
 
     <div class="container">
         <img src="https://i.imgur.com/SJ5ZpYj.jpeg" alt="Background" class="background-img">
-        
         <div class="needle-container">
             <svg id="needle" viewBox="0 0 40 140">
                 <path d="M20,0 L0,35 L12,35 L12,140 L28,140 L28,35 L40,35 Z" 
@@ -88,12 +93,15 @@
 
     <script>
         const needle = document.getElementById('needle');
+        const container = document.querySelector('.container');
         let isDragging = false;
 
         function updateRotation(e) {
-            const containerRect = document.querySelector('.needle-container').getBoundingClientRect();
-            const centerX = containerRect.left;
-            const centerY = containerRect.top;
+            const needleRect = document.querySelector('.needle-container').getBoundingClientRect();
+            
+            // 取得指標圓心的絕對中心點
+            const centerX = needleRect.left + (needleRect.width / 2);
+            const centerY = needleRect.top + (needleRect.height / 2);
 
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -102,34 +110,37 @@
             const deltaY = clientY - centerY;
 
             let angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+
+            // 核心修正：如果螢幕是直向的（內容旋轉了 90 度），計算的角度也要扣除 90 度
+            const isPortrait = window.innerHeight > window.innerWidth;
+            if (isPortrait) {
+                angle -= 90;
+            }
             
-            if (angle > 0) {
-                angle = angle > 90 ? -180 : 0;
+            // 限制箭頭只能在上方 180 度範圍活動
+            if (angle > 0 && angle < 180) {
+                angle = (angle > 90) ? -180 : 0;
             }
             
             needle.style.transform = `rotate(${angle + 90}deg)`;
         }
 
-        // 滑鼠事件
-        window.addEventListener('mousedown', () => isDragging = true);
-        window.addEventListener('mouseup', () => isDragging = false);
-        window.addEventListener('mousemove', (e) => {
-            if (isDragging) updateRotation(e);
-        });
-
-        // 觸控事件
-        window.addEventListener('touchstart', (e) => {
-            isDragging = true;
-            updateRotation(e);
-        }, { passive: false });
-        
-        window.addEventListener('touchend', () => isDragging = false);
-        window.addEventListener('touchmove', (e) => {
+        // 統一滑鼠與觸控事件
+        const start = (e) => { isDragging = true; updateRotation(e); };
+        const end = () => { isDragging = false; };
+        const move = (e) => { 
             if (isDragging) {
-                e.preventDefault();
+                if(e.cancelable) e.preventDefault();
                 updateRotation(e);
             }
-        }, { passive: false });
+        };
+
+        window.addEventListener('mousedown', start);
+        window.addEventListener('mouseup', end);
+        window.addEventListener('mousemove', move);
+        window.addEventListener('touchstart', start, { passive: false });
+        window.addEventListener('touchend', end);
+        window.addEventListener('touchmove', move, { passive: false });
     </script>
 </body>
 </html>
