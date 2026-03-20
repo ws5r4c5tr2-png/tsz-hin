@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>狀態指數儀2 - 最終修正版</title>
+    <title>狀態指數儀2 - 最終完善版</title>
     <style>
         body {
             margin: 0;
@@ -25,9 +25,10 @@
             margin-top: 5vh; 
             user-select: none;
             -webkit-user-select: none;
-            /* 確保左上角頭像裁切整齊 */
             overflow: hidden; 
             border-radius: 5px;
+            /* 修正：增加 cursor 指示這區域可以互動 */
+            cursor: pointer;
         }
 
         .background-img {
@@ -37,19 +38,17 @@
             pointer-events: none; 
         }
 
-        /* 修正 1：頭像完全貼齊左上角盡頭 */
         #overlay-avatar {
             position: absolute;
             top: 0;    
             left: 0;   
-            width: 22%; /* 根據背景圖比例自動調整大小，約佔左上角區塊 */
+            width: 22%; 
             height: auto;
             z-index: 5;    
             display: none;
             pointer-events: none;
         }
 
-        /* 修正 2：指針容器位置對準銀色扣 (47.5%) */
         .needle-container {
             position: absolute;
             bottom: 6.5%; 
@@ -69,13 +68,8 @@
             transform-origin: bottom center;
             transform: rotate(0deg); 
             transition: transform 0.05s linear; 
-            cursor: grab;
             filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.3));
-            touch-action: none;
-        }
-
-        #needle:active {
-            cursor: grabbing;
+            pointer-events: none; /* 讓事件穿透到父容器統一處理 */
         }
 
         .pivot {
@@ -90,7 +84,6 @@
             z-index: 11;
         }
 
-        /* 底部頭像列表 */
         .avatar-list {
             display: flex;
             justify-content: center;
@@ -111,6 +104,8 @@
             transition: all 0.2s ease;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             background-color: white;
+            /* 確保點擊頭像不會觸發 drag 邏輯 */
+            touch-action: auto; 
         }
 
         .avatar-item.active {
@@ -123,17 +118,15 @@
             width: 100%;
             height: 100%;
             object-fit: cover; 
+            pointer-events: none;
         }
-
     </style>
 </head>
 <body>
 
-    <div class="gauge-section">
+    <div class="gauge-section" id="gaugeArea">
         <img src="https://i.imgur.com/SJ5ZpYj.jpeg" alt="Background" class="background-img">
-        
         <img id="overlay-avatar" src="" alt="Overlay Avatar">
-
         <div class="needle-container">
             <svg id="needle" viewBox="0 0 40 140">
                 <path d="M20,0 L0,35 L12,35 L12,140 L28,140 L28,35 L40,35 Z" 
@@ -148,28 +141,27 @@
 
     <div class="avatar-list">
         <div class="avatar-item" data-avatar="https://i.imgur.com/tAd34Op.jpeg">
-            <img src="https://i.imgur.com/tAd34Op.jpeg" alt="小男孩">
+            <img src="https://i.imgur.com/tAd34Op.jpeg" alt="Avatar 1">
         </div>
         <div class="avatar-item" data-avatar="https://i.imgur.com/ksTj6cw.jpeg">
-            <img src="https://i.imgur.com/ksTj6cw.jpeg" alt="女士1">
+            <img src="https://i.imgur.com/ksTj6cw.jpeg" alt="Avatar 2">
         </div>
         <div class="avatar-item" data-avatar="https://i.imgur.com/WeH7MAT.jpeg">
-            <img src="https://i.imgur.com/WeH7MAT.jpeg" alt="女士2">
+            <img src="https://i.imgur.com/WeH7MAT.jpeg" alt="Avatar 3">
         </div>
         <div class="avatar-item" data-avatar="https://i.imgur.com/yK1OhEC.jpeg">
-            <img src="https://i.imgur.com/yK1OhEC.jpeg" alt="先生">
+            <img src="https://i.imgur.com/yK1OhEC.jpeg" alt="Avatar 4">
         </div>
     </div>
 
     <script>
         const needle = document.getElementById('needle');
         const container = document.querySelector('.needle-container');
+        const gaugeArea = document.getElementById('gaugeArea');
         let isDragging = false;
 
-        // 更新旋轉邏輯
         function updateRotation(e) {
             const rect = container.getBoundingClientRect();
-            // 中心點取 container 的位置
             const centerX = rect.left; 
             const centerY = rect.top;
 
@@ -182,7 +174,6 @@
             let angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
             let finalAngle = angle + 90;
 
-            // 限制範圍在 -90 到 90 度
             if (finalAngle < -90) {
                 finalAngle = (finalAngle < -180) ? 90 : -90;
             } else if (finalAngle > 90) {
@@ -192,28 +183,45 @@
             needle.style.transform = `rotate(${finalAngle}deg)`;
         }
 
-        const onStart = (e) => { isDragging = true; updateRotation(e); };
-        const onEnd = () => { isDragging = false; };
-        const onMove = (e) => { if (isDragging) { if (e.cancelable) e.preventDefault(); updateRotation(e); } };
+        // 修正：僅在儀表板區域內按下的時候才啟動拖拽
+        gaugeArea.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            updateRotation(e);
+        });
 
-        window.addEventListener('mousedown', onStart);
-        window.addEventListener('mouseup', onEnd);
-        window.addEventListener('mousemove', onMove);
-        window.addEventListener('touchstart', onStart, { passive: false });
-        window.addEventListener('touchend', onEnd);
-        window.addEventListener('touchmove', onMove, { passive: false });
+        gaugeArea.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            updateRotation(e);
+        }, { passive: false });
 
-        // 頭像切換邏輯
+        // 全域監聽移動與放開，確保拖出區域外依然有效，但必須先在區域內按下
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) updateRotation(e);
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                if (e.cancelable) e.preventDefault();
+                updateRotation(e);
+            }
+        }, { passive: false });
+
+        window.addEventListener('mouseup', () => isDragging = false);
+        window.addEventListener('touchend', () => isDragging = false);
+
+        // 頭像點擊邏輯
         const overlayAvatar = document.getElementById('overlay-avatar');
         const avatarItems = document.querySelectorAll('.avatar-item');
 
         avatarItems.forEach(item => {
-            item.addEventListener('click', function() {
+            item.addEventListener('click', function(e) {
+                // 阻止事件冒泡到 window，確保不會觸發拖拽邏輯
+                e.stopPropagation();
+                
                 const imgUrl = this.getAttribute('data-avatar');
                 overlayAvatar.src = imgUrl;
                 overlayAvatar.style.display = 'block'; 
                 
-                // 更新選取樣式
                 avatarItems.forEach(i => i.classList.remove('active'));
                 this.classList.add('active');
             });
