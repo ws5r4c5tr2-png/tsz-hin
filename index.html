@@ -3,31 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>狀態指數儀2</title>
+    <title>狀態指數儀2 - 頭像交互版</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             display: flex;
-            justify-content: center;
-            /* 改為從頂部開始排列，確保下方的 Margin 能生效 */
-            align-items: flex-start; 
+            flex-direction: column; /* 讓內容垂直排列：儀表板在上，頭像列表在下 */
+            align-items: center; 
             min-height: 100vh;
             background-color: #f0f0f0;
             font-family: sans-serif;
-            /* 允許垂直捲動以看見底部空白 */
             overflow-y: auto;
-            touch-action: none;
+            touch-action: pan-y;
         }
 
-        .container {
+        /* 儀表板區域容器 */
+        .gauge-section {
             position: relative;
             width: 95vw;
             max-width: 600px;
-            /* 調整上方間距，讓畫面視覺更平衡 */
             margin-top: 5vh; 
-            /* 增加約 1cm 的空白高度 (1cm ≈ 37.8px) */
-            margin-bottom: 38px; 
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .background-img {
@@ -35,19 +33,35 @@
             display: block;
             border-radius: 5px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            pointer-events: none; 
         }
 
-        /* 指標容器位置：對準銀色金屬扣 */
+        /* 新增：覆蓋在左上角的原始頭像 */
+        #overlay-avatar {
+            position: absolute;
+            top: 10px;    /* 距離頂部 */
+            left: 10px;   /* 距離左側 */
+            width: 80px;   /* 初始大小，可依需求調整 */
+            height: auto;
+            z-index: 5;    /* 位於背景圖之上，指針之下 */
+            border-radius: 3px; /* 稍微圓角，配合儀表板 */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: none; /* 初始隱藏，點擊後顯示 */
+            pointer-events: none; /* 防止遮擋指針操作 */
+        }
+
+        /* 指標容器位置 */
         .needle-container {
             position: absolute;
             bottom: 6.5%; 
-            left: 47.5%; 
+            left: 50%; 
+            transform: translateX(-50%);
             width: 0;
             height: 0;
-            z-index: 10;
+            z-index: 10; /* 位於最上層 */
         }
 
-        /* SVG 箭頭：帶有黑色邊框 */
+        /* SVG 箭頭 */
         #needle {
             position: absolute;
             bottom: 0;
@@ -55,10 +69,15 @@
             width: 40px;
             height: 140px; 
             transform-origin: bottom center;
-            transform: rotate(-90deg);
-            transition: transform 0.05s ease-out;
-            cursor: pointer;
+            transform: rotate(0deg); 
+            transition: transform 0.1s ease-out; 
+            cursor: grab;
             filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.3));
+            touch-action: none;
+        }
+
+        #needle:active {
+            cursor: grabbing;
         }
 
         /* 底部圓點 */
@@ -73,13 +92,52 @@
             border: 1px solid #333;
             z-index: 11;
         }
+
+        /* ========================================= */
+        /* 新增：底部頭像列表區域 CSS */
+        /* ========================================= */
+        .avatar-list {
+            display: flex;
+            justify-content: center;
+            gap: 15px;       /* 頭像之間的間距 */
+            margin-top: 30px; /* 與儀表板的距離 */
+            margin-bottom: 40px; /* 距離頁面底部 */
+            width: 95vw;
+            max-width: 600px;
+        }
+
+        .avatar-item {
+            width: 70px;     /* 底部頭像的大小 */
+            height: 70px;
+            border-radius: 50%; /* 強制圓形 */
+            overflow: hidden;   /* 隱藏超出圓形的白色背景 */
+            border: 3px solid transparent; /* 預設無邊框 */
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* 當頭像被選取時的樣式 */
+        .avatar-item.active {
+            border-color: #FFD700; /* 金色邊框 */
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .avatar-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 確保圖片填滿圓形且不變形 */
+        }
+
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div class="gauge-section">
         <img src="https://i.imgur.com/SJ5ZpYj.jpeg" alt="Background" class="background-img">
         
+        <img id="overlay-avatar" src="" alt="Overlay Avatar">
+
         <div class="needle-container">
             <svg id="needle" viewBox="0 0 40 140">
                 <path d="M20,0 L0,35 L12,35 L12,140 L28,140 L28,35 L40,35 Z" 
@@ -92,14 +150,33 @@
         </div>
     </div>
 
+    <div class="avatar-list">
+        <div class="avatar-item" data-avatar="https://i.imgur.com/tAd34Op.jpeg">
+            <img src="https://i.imgur.com/tAd34Op.jpeg" alt="Avatar 1">
+        </div>
+        <div class="avatar-item" data-avatar="https://i.imgur.com/ksTj6cw.jpeg">
+            <img src="https://i.imgur.com/ksTj6cw.jpeg" alt="Avatar 2">
+        </div>
+        <div class="avatar-item" data-avatar="https://i.imgur.com/WeH7MAT.jpeg">
+            <img src="https://i.imgur.com/WeH7MAT.jpeg" alt="Avatar 3">
+        </div>
+        <div class="avatar-item" data-avatar="https://i.imgur.com/yK1OhEC.jpeg">
+            <img src="https://i.imgur.com/yK1OhEC.jpeg" alt="Avatar 4">
+        </div>
+    </div>
+
     <script>
+        // =========================================
+        // 原有的指針旋轉邏輯
+        // =========================================
         const needle = document.getElementById('needle');
+        const container = document.querySelector('.needle-container');
         let isDragging = false;
 
         function updateRotation(e) {
-            const containerRect = document.querySelector('.needle-container').getBoundingClientRect();
-            const centerX = containerRect.left;
-            const centerY = containerRect.top;
+            const rect = container.getBoundingClientRect();
+            const centerX = rect.left;
+            const centerY = rect.top;
 
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -108,34 +185,51 @@
             const deltaY = clientY - centerY;
 
             let angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
-            
-            if (angle > 0) {
-                angle = angle > 90 ? -180 : 0;
+            let finalAngle = angle + 90;
+
+            if (finalAngle < -90) {
+                finalAngle = (finalAngle < -180) ? 90 : -90;
+            } else if (finalAngle > 90) {
+                finalAngle = 90;
             }
-            
-            needle.style.transform = `rotate(${angle + 90}deg)`;
+
+            needle.style.transform = `rotate(${finalAngle}deg)`;
         }
 
-        // 滑鼠事件
-        window.addEventListener('mousedown', () => isDragging = true);
-        window.addEventListener('mouseup', () => isDragging = false);
-        window.addEventListener('mousemove', (e) => {
-            if (isDragging) updateRotation(e);
+        const onStart = (e) => { isDragging = true; updateRotation(e); };
+        const onEnd = () => { isDragging = false; };
+        const onMove = (e) => { if (isDragging) { if (e.cancelable) e.preventDefault(); updateRotation(e); } };
+
+        window.addEventListener('mousedown', onStart);
+        window.addEventListener('mouseup', onEnd);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('touchstart', onStart, { passive: false });
+        window.addEventListener('touchend', onEnd);
+        window.addEventListener('touchmove', onMove, { passive: false });
+
+        // =========================================
+        // 新增：頭像點擊交互邏輯
+        // =========================================
+        const overlayAvatar = document.getElementById('overlay-avatar');
+        const avatarItems = document.querySelectorAll('.avatar-item');
+
+        avatarItems.forEach(item => {
+            item.addEventListener('click', function() {
+                // 1. 取得該頭像的原始圖片網址
+                const originalImageUrl = this.getAttribute('data-avatar');
+
+                // 2. 更新儀表板左上角的頭像
+                overlayAvatar.src = originalImageUrl;
+                overlayAvatar.style.display = 'block'; // 顯示頭像
+
+                // 3. 更新底部列表的「選取」狀態 (CSS 反饋)
+                // 先移除所有人的 active 狀態
+                avatarItems.forEach(i => i.classList.remove('active'));
+                // 給當前點擊的加上 active
+                this.classList.add('active');
+            });
         });
 
-        // 觸控事件
-        window.addEventListener('touchstart', (e) => {
-            isDragging = true;
-            updateRotation(e);
-        }, { passive: false });
-        
-        window.addEventListener('touchend', () => isDragging = false);
-        window.addEventListener('touchmove', (e) => {
-            if (isDragging) {
-                e.preventDefault();
-                updateRotation(e);
-            }
-        }, { passive: false });
     </script>
 </body>
 </html>
