@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>狀態指數儀2 - 最終完善版</title>
+    <title>狀態指數儀2 - 五頭像最終完善版</title>
     <style>
       body {
         margin: 0;
@@ -95,6 +95,7 @@
         margin-bottom: 40px;
         width: 95vw;
         max-width: 600px;
+        flex-wrap: wrap; /* 如果螢幕太窄，自動換行 */
       }
 
       .avatar-item {
@@ -166,17 +167,26 @@
           alt="Avatar 2"
         />
       </div>
+      <div class="avatar-item" data-avatar="https://i.imgur.com/yK1OhEC.jpeg">
+        <img src="https://i.imgur.com/yK1OhEC.jpeg" alt="Avatar 3" />
+      </div>
       <div
         class="avatar-item"
         data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/miss.jpg"
       >
         <img
           src="https://ws5r4c5tr2-png.github.io/tsz-hin/miss.jpg"
-          alt="Avatar 3"
+          alt="Avatar 4"
         />
       </div>
-      <div class="avatar-item" data-avatar="https://i.imgur.com/yK1OhEC.jpeg">
-        <img src="https://i.imgur.com/yK1OhEC.jpeg" alt="Avatar 4" />
+      <div
+        class="avatar-item"
+        data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/ki.jpg"
+      >
+        <img
+          src="https://ws5r4c5tr2-png.github.io/tsz-hin/ki.jpg"
+          alt="Avatar 5"
+        />
       </div>
     </div>
 
@@ -209,7 +219,6 @@
         needle.style.transform = `rotate(${finalAngle}deg)`;
       }
 
-      // 修正：僅在儀表板區域內按下的時候才啟動拖拽
       gaugeArea.addEventListener("mousedown", (e) => {
         isDragging = true;
         updateRotation(e);
@@ -224,7 +233,6 @@
         { passive: false }
       );
 
-      // 全域監聽移動與放開，確保拖出區域外依然有效，但必須先在區域內按下
       window.addEventListener("mousemove", (e) => {
         if (isDragging) updateRotation(e);
       });
@@ -243,13 +251,11 @@
       window.addEventListener("mouseup", () => (isDragging = false));
       window.addEventListener("touchend", () => (isDragging = false));
 
-      // 頭像點擊邏輯
       const overlayAvatar = document.getElementById("overlay-avatar");
       const avatarItems = document.querySelectorAll(".avatar-item");
 
       avatarItems.forEach((item) => {
         item.addEventListener("click", function (e) {
-          // 阻止事件冒泡到 window，確保不會觸發拖拽邏輯
           e.stopPropagation();
 
           const imgUrl = this.getAttribute("data-avatar");
