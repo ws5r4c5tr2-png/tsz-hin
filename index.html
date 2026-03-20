@@ -1,231 +1,265 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>狀態指數儀2 - 最終完善版</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center; 
-            min-height: 100vh;
-            background-color: #f0f0f0;
-            font-family: sans-serif;
-            overflow-y: auto;
-            touch-action: pan-y;
-        }
+      body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f0f0f0;
+        font-family: sans-serif;
+        overflow-y: auto;
+        touch-action: pan-y;
+      }
 
-        .gauge-section {
-            position: relative;
-            width: 95vw;
-            max-width: 600px;
-            margin-top: 5vh; 
-            user-select: none;
-            -webkit-user-select: none;
-            overflow: hidden; 
-            border-radius: 5px;
-            /* 修正：增加 cursor 指示這區域可以互動 */
-            cursor: pointer;
-        }
+      .gauge-section {
+        position: relative;
+        width: 95vw;
+        max-width: 600px;
+        margin-top: 5vh;
+        user-select: none;
+        -webkit-user-select: none;
+        overflow: hidden;
+        border-radius: 5px;
+        /* 修正：增加 cursor 指示這區域可以互動 */
+        cursor: pointer;
+      }
 
-        .background-img {
-            width: 100%;
-            display: block;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            pointer-events: none; 
-        }
+      .background-img {
+        width: 100%;
+        display: block;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        pointer-events: none;
+      }
 
-        #overlay-avatar {
-            position: absolute;
-            top: 0;    
-            left: 0;   
-            width: 22%; 
-            height: auto;
-            z-index: 5;    
-            display: none;
-            pointer-events: none;
-        }
+      #overlay-avatar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 22%;
+        height: auto;
+        z-index: 5;
+        display: none;
+        pointer-events: none;
+      }
 
-        .needle-container {
-            position: absolute;
-            bottom: 6.5%; 
-            left: 47.5%; 
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            z-index: 10;
-        }
+      .needle-container {
+        position: absolute;
+        bottom: 6.5%;
+        left: 47.5%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        z-index: 10;
+      }
 
-        #needle {
-            position: absolute;
-            bottom: 0;
-            left: -20px; 
-            width: 40px;
-            height: 140px; 
-            transform-origin: bottom center;
-            transform: rotate(0deg); 
-            transition: transform 0.05s linear; 
-            filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.3));
-            pointer-events: none; /* 讓事件穿透到父容器統一處理 */
-        }
+      #needle {
+        position: absolute;
+        bottom: 0;
+        left: -20px;
+        width: 40px;
+        height: 140px;
+        transform-origin: bottom center;
+        transform: rotate(0deg);
+        transition: transform 0.05s linear;
+        filter: drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.3));
+        pointer-events: none; /* 讓事件穿透到父容器統一處理 */
+      }
 
-        .pivot {
-            position: absolute;
-            bottom: -8px;
-            left: -8px;
-            width: 16px;
-            height: 16px;
-            background-color: #888;
-            border-radius: 50%;
-            border: 1px solid #333;
-            z-index: 11;
-        }
+      .pivot {
+        position: absolute;
+        bottom: -8px;
+        left: -8px;
+        width: 16px;
+        height: 16px;
+        background-color: #888;
+        border-radius: 50%;
+        border: 1px solid #333;
+        z-index: 11;
+      }
 
-        .avatar-list {
-            display: flex;
-            justify-content: center;
-            gap: 15px;       
-            margin-top: 30px; 
-            margin-bottom: 40px; 
-            width: 95vw;
-            max-width: 600px;
-        }
+      .avatar-list {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 30px;
+        margin-bottom: 40px;
+        width: 95vw;
+        max-width: 600px;
+      }
 
-        .avatar-item {
-            width: 70px;     
-            height: 70px;
-            border-radius: 50%; 
-            overflow: hidden;   
-            border: 3px solid #eee; 
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            background-color: white;
-            /* 確保點擊頭像不會觸發 drag 邏輯 */
-            touch-action: auto; 
-        }
+      .avatar-item {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid #eee;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        background-color: white;
+        /* 確保點擊頭像不會觸發 drag 邏輯 */
+        touch-action: auto;
+      }
 
-        .avatar-item.active {
-            border-color: #FFD700; 
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-            transform: scale(1.1);
-        }
+      .avatar-item.active {
+        border-color: #ffd700;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        transform: scale(1.1);
+      }
 
-        .avatar-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; 
-            pointer-events: none;
-        }
+      .avatar-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        pointer-events: none;
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <div class="gauge-section" id="gaugeArea">
-        <img src="https://i.imgur.com/SJ5ZpYj.jpeg" alt="Background" class="background-img">
-        <img id="overlay-avatar" src="" alt="Overlay Avatar">
-        <div class="needle-container">
-            <svg id="needle" viewBox="0 0 40 140">
-                <path d="M20,0 L0,35 L12,35 L12,140 L28,140 L28,35 L40,35 Z" 
-                      fill="#FFD700" 
-                      stroke="#000000" 
-                      stroke-width="2" 
-                      stroke-linejoin="round"/>
-            </svg>
-            <div class="pivot"></div>
-        </div>
+      <img
+        src="https://ws5r4c5tr2-png.github.io/tsz-hin/tsz2.jpg"
+        alt="Background"
+        class="background-img"
+      />
+      <img id="overlay-avatar" src="" alt="Overlay Avatar" />
+      <div class="needle-container">
+        <svg id="needle" viewBox="0 0 40 140">
+          <path
+            d="M20,0 L0,35 L12,35 L12,140 L28,140 L28,35 L40,35 Z"
+            fill="#FFD700"
+            stroke="#000000"
+            stroke-width="2"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <div class="pivot"></div>
+      </div>
     </div>
 
     <div class="avatar-list">
-        <div class="avatar-item" data-avatar="https://i.imgur.com/tAd34Op.jpeg">
-            <img src="https://i.imgur.com/tAd34Op.jpeg" alt="Avatar 1">
-        </div>
-        <div class="avatar-item" data-avatar="https://i.imgur.com/ksTj6cw.jpeg">
-            <img src="https://i.imgur.com/ksTj6cw.jpeg" alt="Avatar 2">
-        </div>
-        <div class="avatar-item" data-avatar="https://i.imgur.com/WeH7MAT.jpeg">
-            <img src="https://i.imgur.com/WeH7MAT.jpeg" alt="Avatar 3">
-        </div>
-        <div class="avatar-item" data-avatar="https://i.imgur.com/yK1OhEC.jpeg">
-            <img src="https://i.imgur.com/yK1OhEC.jpeg" alt="Avatar 4">
-        </div>
+      <div
+        class="avatar-item"
+        data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/hin.jpg"
+      >
+        <img
+          src="https://ws5r4c5tr2-png.github.io/tsz-hin/hin.jpg"
+          alt="Avatar 1"
+        />
+      </div>
+      <div
+        class="avatar-item"
+        data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/mon2.jpg"
+      >
+        <img
+          src="https://ws5r4c5tr2-png.github.io/tsz-hin/mon2.jpg"
+          alt="Avatar 2"
+        />
+      </div>
+      <div
+        class="avatar-item"
+        data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/miss.jpg"
+      >
+        <img
+          src="https://ws5r4c5tr2-png.github.io/tsz-hin/miss.jpg"
+          alt="Avatar 3"
+        />
+      </div>
+      <div class="avatar-item" data-avatar="https://i.imgur.com/yK1OhEC.jpeg">
+        <img src="https://i.imgur.com/yK1OhEC.jpeg" alt="Avatar 4" />
+      </div>
     </div>
 
     <script>
-        const needle = document.getElementById('needle');
-        const container = document.querySelector('.needle-container');
-        const gaugeArea = document.getElementById('gaugeArea');
-        let isDragging = false;
+      const needle = document.getElementById("needle");
+      const container = document.querySelector(".needle-container");
+      const gaugeArea = document.getElementById("gaugeArea");
+      let isDragging = false;
 
-        function updateRotation(e) {
-            const rect = container.getBoundingClientRect();
-            const centerX = rect.left; 
-            const centerY = rect.top;
+      function updateRotation(e) {
+        const rect = container.getBoundingClientRect();
+        const centerX = rect.left;
+        const centerY = rect.top;
 
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-            const deltaX = clientX - centerX;
-            const deltaY = clientY - centerY;
+        const deltaX = clientX - centerX;
+        const deltaY = clientY - centerY;
 
-            let angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
-            let finalAngle = angle + 90;
+        let angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+        let finalAngle = angle + 90;
 
-            if (finalAngle < -90) {
-                finalAngle = (finalAngle < -180) ? 90 : -90;
-            } else if (finalAngle > 90) {
-                finalAngle = 90;
-            }
-
-            needle.style.transform = `rotate(${finalAngle}deg)`;
+        if (finalAngle < -90) {
+          finalAngle = finalAngle < -180 ? 90 : -90;
+        } else if (finalAngle > 90) {
+          finalAngle = 90;
         }
 
-        // 修正：僅在儀表板區域內按下的時候才啟動拖拽
-        gaugeArea.addEventListener('mousedown', (e) => {
-            isDragging = true;
+        needle.style.transform = `rotate(${finalAngle}deg)`;
+      }
+
+      // 修正：僅在儀表板區域內按下的時候才啟動拖拽
+      gaugeArea.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        updateRotation(e);
+      });
+
+      gaugeArea.addEventListener(
+        "touchstart",
+        (e) => {
+          isDragging = true;
+          updateRotation(e);
+        },
+        { passive: false }
+      );
+
+      // 全域監聽移動與放開，確保拖出區域外依然有效，但必須先在區域內按下
+      window.addEventListener("mousemove", (e) => {
+        if (isDragging) updateRotation(e);
+      });
+
+      window.addEventListener(
+        "touchmove",
+        (e) => {
+          if (isDragging) {
+            if (e.cancelable) e.preventDefault();
             updateRotation(e);
+          }
+        },
+        { passive: false }
+      );
+
+      window.addEventListener("mouseup", () => (isDragging = false));
+      window.addEventListener("touchend", () => (isDragging = false));
+
+      // 頭像點擊邏輯
+      const overlayAvatar = document.getElementById("overlay-avatar");
+      const avatarItems = document.querySelectorAll(".avatar-item");
+
+      avatarItems.forEach((item) => {
+        item.addEventListener("click", function (e) {
+          // 阻止事件冒泡到 window，確保不會觸發拖拽邏輯
+          e.stopPropagation();
+
+          const imgUrl = this.getAttribute("data-avatar");
+          overlayAvatar.src = imgUrl;
+          overlayAvatar.style.display = "block";
+
+          avatarItems.forEach((i) => i.classList.remove("active"));
+          this.classList.add("active");
         });
-
-        gaugeArea.addEventListener('touchstart', (e) => {
-            isDragging = true;
-            updateRotation(e);
-        }, { passive: false });
-
-        // 全域監聽移動與放開，確保拖出區域外依然有效，但必須先在區域內按下
-        window.addEventListener('mousemove', (e) => {
-            if (isDragging) updateRotation(e);
-        });
-
-        window.addEventListener('touchmove', (e) => {
-            if (isDragging) {
-                if (e.cancelable) e.preventDefault();
-                updateRotation(e);
-            }
-        }, { passive: false });
-
-        window.addEventListener('mouseup', () => isDragging = false);
-        window.addEventListener('touchend', () => isDragging = false);
-
-        // 頭像點擊邏輯
-        const overlayAvatar = document.getElementById('overlay-avatar');
-        const avatarItems = document.querySelectorAll('.avatar-item');
-
-        avatarItems.forEach(item => {
-            item.addEventListener('click', function(e) {
-                // 阻止事件冒泡到 window，確保不會觸發拖拽邏輯
-                e.stopPropagation();
-                
-                const imgUrl = this.getAttribute('data-avatar');
-                overlayAvatar.src = imgUrl;
-                overlayAvatar.style.display = 'block'; 
-                
-                avatarItems.forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
+      });
     </script>
-</body>
+  </body>
 </html>
