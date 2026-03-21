@@ -2,219 +2,44 @@
 <html lang="zh-HK">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
-    <title>狀態指數儀2 - 五頭像最終完善版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>狀態指數儀2 - 記憶位置版</title>
     <style>
-      body {
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-height: 100vh;
-        background-color: #f0f0f0;
-        font-family: sans-serif;
-        overflow-y: auto;
-        touch-action: pan-y;
-      }
-
-      .gauge-section {
-        position: relative;
-        width: 95vw;
-        max-width: 600px;
-        margin-top: 5vh;
-        user-select: none;
-        -webkit-user-select: none;
-        overflow: hidden;
-        border-radius: 5px;
-        /* 修正：增加 cursor 指示這區域可以互動 */
-        cursor: pointer;
-      }
-
-      .background-img {
-        width: 100%;
-        display: block;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        pointer-events: none;
-      }
-
-      #overlay-avatar {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 22%;
-        height: auto;
-        z-index: 5;
-        display: none;
-        pointer-events: none;
-      }
-
-      .needle-container {
-        position: absolute;
-        bottom: 6.5%;
-        left: 47.5%;
-        transform: translateX(-50%);
-        width: 0;
-        height: 0;
-        z-index: 10;
-      }
-
-      #needle {
-        position: absolute;
-        bottom: 0;
-        left: -20px;
-        width: 40px;
-        height: 140px;
-        transform-origin: bottom center;
-        transform: rotate(0deg);
-        transition: transform 0.05s linear;
-        filter: drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.3));
-        pointer-events: none; /* 讓事件穿透到父容器統一處理 */
-      }
-
-      .pivot {
-        position: absolute;
-        bottom: -8px;
-        left: -8px;
-        width: 16px;
-        height: 16px;
-        background-color: #888;
-        border-radius: 50%;
-        border: 1px solid #333;
-        z-index: 11;
-      }
-
-      .avatar-list {
-        display: flex;
-        justify-content: center;
-        gap: 15px;
-        margin-top: 30px;
-        margin-bottom: 40px;
-        width: 95vw;
-        max-width: 600px;
-        flex-wrap: wrap; /* 如果螢幕太窄，自動換行 */
-      }
-
-      .avatar-item {
-        width: 70px;
-        height: 70px;
-        border-radius: 50%;
-        overflow: hidden;
-        border: 3px solid #eee;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        background-color: white;
-        /* 確保點擊頭像不會觸發 drag 邏輯 */
-        touch-action: auto;
-      }
-
-      .avatar-item.active {
-        border-color: #ffd700;
-        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-        transform: scale(1.1);
-      }
-
-      .avatar-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        pointer-events: none;
-      }
+      /* 保留原本的 CSS 樣式 */
+      body { margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; background-color: #f0f0f0; font-family: sans-serif; overflow-y: auto; touch-action: pan-y; }
+      .gauge-section { position: relative; width: 95vw; max-width: 600px; margin-top: 5vh; user-select: none; -webkit-user-select: none; overflow: hidden; border-radius: 5px; cursor: pointer; }
+      .background-img { width: 100%; display: block; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); pointer-events: none; }
+      #overlay-avatar { position: absolute; top: 0; left: 0; width: 22%; height: auto; z-index: 5; display: none; pointer-events: none; }
+      .needle-container { position: absolute; bottom: 6.5%; left: 47.5%; transform: translateX(-50%); width: 0; height: 0; z-index: 10; }
+      #needle { position: absolute; bottom: 0; left: -20px; width: 40px; height: 140px; transform-origin: bottom center; transform: rotate(0deg); transition: transform 0.05s linear; filter: drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.3)); pointer-events: none; }
+      .pivot { position: absolute; bottom: -8px; left: -8px; width: 16px; height: 16px; background-color: #888; border-radius: 50%; border: 1px solid #333; z-index: 11; }
+      .avatar-list { display: flex; justify-content: center; gap: 15px; margin-top: 30px; margin-bottom: 40px; width: 95vw; max-width: 600px; flex-wrap: wrap; }
+      .avatar-item { width: 70px; height: 70px; border-radius: 50%; overflow: hidden; border: 3px solid #eee; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); background-color: white; touch-action: auto; }
+      .avatar-item.active { border-color: #ffd700; box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); transform: scale(1.1); }
+      .avatar-item img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
     </style>
   </head>
   <body>
     <div class="gauge-section" id="gaugeArea">
-      <img
-        src="https://ws5r4c5tr2-png.github.io/tsz-hin/tsz2.jpg"
-        alt="Background"
-        class="background-img"
-      />
+      <img src="https://ws5r4c5tr2-png.github.io/tsz-hin/tsz2.jpg" alt="Background" class="background-img" />
       <img id="overlay-avatar" src="" alt="Overlay Avatar" />
       <div class="needle-container">
         <svg id="needle" viewBox="0 0 40 140">
-          <path
-            d="M20,0 L0,35 L12,35 L12,140 L28,140 L28,35 L40,35 Z"
-            fill="#FFD700"
-            stroke="#000000"
-            stroke-width="2"
-            stroke-linejoin="round"
-          />
+          <path d="M20,0 L0,35 L12,35 L12,140 L28,140 L28,35 L40,35 Z" fill="#FFD700" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
         </svg>
         <div class="pivot"></div>
       </div>
     </div>
 
     <div class="avatar-list">
-      <div
-        class="avatar-item"
-        data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/hin.jpg"
-      >
-        <img
-          src="https://ws5r4c5tr2-png.github.io/tsz-hin/hin.jpg"
-          alt="Avatar 1"
-        />
-      </div>
-      <div
-        class="avatar-item"
-        data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/mon2.jpg"
-      >
-        <img
-          src="https://ws5r4c5tr2-png.github.io/tsz-hin/mon2.jpg"
-          alt="Avatar 2"
-        />
-      </div>
-      <div class="avatar-item" data-avatar="https://i.imgur.com/yK1OhEC.jpeg">
-        <img src="https://i.imgur.com/yK1OhEC.jpeg" alt="Avatar 3" />
-      </div>
-      <div
-        class="avatar-item"
-        data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/miss.jpg"
-      >
-        <img
-          src="https://ws5r4c5tr2-png.github.io/tsz-hin/miss.jpg"
-          alt="Avatar 4"
-        />
-      </div>
-      <div
-        class="avatar-item"
-        data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/ki.jpg"
-      >
-        <img
-          src="https://ws5r4c5tr2-png.github.io/tsz-hin/ki.jpg"
-          alt="Avatar 5"
-        />
-      </div>
-      <div
-        class="avatar-item"
-        data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/02.jpg"
-      >
-        <img
-          src="https://ws5r4c5tr2-png.github.io/tsz-hin/02.jpg"
-          alt="Avatar 6"
-        />
-      </div>
-      <div
-        class="avatar-item"
-        data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/03.jpg"
-      >
-        <img
-          src="https://ws5r4c5tr2-png.github.io/tsz-hin/03.jpg"
-          alt="Avatar 7"
-        />
-      </div>
-      <div
-        class="avatar-item"
-        data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/04.jpg"
-      >
-        <img
-          src="https://ws5r4c5tr2-png.github.io/tsz-hin/04.jpg"
-          alt="Avatar 8"
-        />
-      </div>
+      <div class="avatar-item" data-id="av1" data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/hin.jpg"><img src="https://ws5r4c5tr2-png.github.io/tsz-hin/hin.jpg" /></div>
+      <div class="avatar-item" data-id="av2" data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/mon2.jpg"><img src="https://ws5r4c5tr2-png.github.io/tsz-hin/mon2.jpg" /></div>
+      <div class="avatar-item" data-id="av3" data-avatar="https://i.imgur.com/yK1OhEC.jpeg"><img src="https://i.imgur.com/yK1OhEC.jpeg" /></div>
+      <div class="avatar-item" data-id="av4" data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/miss.jpg"><img src="https://ws5r4c5tr2-png.github.io/tsz-hin/miss.jpg" /></div>
+      <div class="avatar-item" data-id="av5" data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/ki.jpg"><img src="https://ws5r4c5tr2-png.github.io/tsz-hin/ki.jpg" /></div>
+      <div class="avatar-item" data-id="av6" data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/02.jpg"><img src="https://ws5r4c5tr2-png.github.io/tsz-hin/02.jpg" /></div>
+      <div class="avatar-item" data-id="av7" data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/03.jpg"><img src="https://ws5r4c5tr2-png.github.io/tsz-hin/03.jpg" /></div>
+      <div class="avatar-item" data-id="av8" data-avatar="https://ws5r4c5tr2-png.github.io/tsz-hin/04.jpg"><img src="https://ws5r4c5tr2-png.github.io/tsz-hin/04.jpg" /></div>
     </div>
 
     <script>
@@ -223,11 +48,15 @@
       const gaugeArea = document.getElementById("gaugeArea");
       let isDragging = false;
 
+      // --- 新增記憶功能變數 ---
+      let currentAvatarId = null; // 目前選中的頭像 ID
+      let currentAngle = 0;       // 目前指針的角度
+      const avatarAngles = {};    // 用來儲存每個 ID 對應的角度，例如 {"av1": 45, "av2": -30}
+
       function updateRotation(e) {
         const rect = container.getBoundingClientRect();
         const centerX = rect.left;
         const centerY = rect.top;
-
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
@@ -243,41 +72,24 @@
           finalAngle = 90;
         }
 
+        currentAngle = finalAngle; // 更新全域角度變數
         needle.style.transform = `rotate(${finalAngle}deg)`;
+        
+        // 如果目前有選中頭像，即時更新該頭像的記憶角度
+        if (currentAvatarId) {
+          avatarAngles[currentAvatarId] = finalAngle;
+        }
       }
 
-      gaugeArea.addEventListener("mousedown", (e) => {
-        isDragging = true;
-        updateRotation(e);
-      });
-
-      gaugeArea.addEventListener(
-        "touchstart",
-        (e) => {
-          isDragging = true;
-          updateRotation(e);
-        },
-        { passive: false }
-      );
-
-      window.addEventListener("mousemove", (e) => {
-        if (isDragging) updateRotation(e);
-      });
-
-      window.addEventListener(
-        "touchmove",
-        (e) => {
-          if (isDragging) {
-            if (e.cancelable) e.preventDefault();
-            updateRotation(e);
-          }
-        },
-        { passive: false }
-      );
-
+      // 事件監聽
+      gaugeArea.addEventListener("mousedown", (e) => { isDragging = true; updateRotation(e); });
+      gaugeArea.addEventListener("touchstart", (e) => { isDragging = true; updateRotation(e); }, { passive: false });
+      window.addEventListener("mousemove", (e) => { if (isDragging) updateRotation(e); });
+      window.addEventListener("touchmove", (e) => { if (isDragging) { if (e.cancelable) e.preventDefault(); updateRotation(e); } }, { passive: false });
       window.addEventListener("mouseup", () => (isDragging = false));
       window.addEventListener("touchend", () => (isDragging = false));
 
+      // 頭像點擊邏輯 (加入記憶讀取)
       const overlayAvatar = document.getElementById("overlay-avatar");
       const avatarItems = document.querySelectorAll(".avatar-item");
 
@@ -285,12 +97,30 @@
         item.addEventListener("click", function (e) {
           e.stopPropagation();
 
+          const id = this.getAttribute("data-id");
           const imgUrl = this.getAttribute("data-avatar");
+
+          // 1. 更新選中狀態
+          currentAvatarId = id;
           overlayAvatar.src = imgUrl;
           overlayAvatar.style.display = "block";
 
           avatarItems.forEach((i) => i.classList.remove("active"));
           this.classList.add("active");
+
+          // 2. 讀取該頭像上次的記憶角度
+          // 如果該頭像還沒有紀錄，預設為 0 度
+          const savedAngle = avatarAngles[id] || 0;
+          currentAngle = savedAngle;
+          
+          // 3. 讓指針自動轉到記憶位置 (增加一點過渡效果)
+          needle.style.transition = "transform 0.5s ease-out"; 
+          needle.style.transform = `rotate(${savedAngle}deg)`;
+          
+          // 0.5秒後移除過渡效果，避免手動拖拽時有延遲感
+          setTimeout(() => {
+            needle.style.transition = "transform 0.05s linear";
+          }, 500);
         });
       });
     </script>
